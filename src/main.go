@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	// "fmt"
 	"log"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 func main() {
 	// TODO: create internal server logging
 	// Creating a log file
-	file, err := os.OpenFile("./logs/server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile("../logs/server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("Failed to open the log file: %s", err)
 	}
@@ -22,8 +23,8 @@ func main() {
 	log.Printf("Start logging") // Test printing to the same logfile
 
 	// Testing DB package
-	jaegerdb.ConnectJaegerDB()
-	log.Print("Connection to the database established")
+	dbConn := jaegerdb.ConnectJaegerDB()
+	defer dbConn.Close(context.Background())
 
 	// TODO: create internal server package
 	// Server setup
