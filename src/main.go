@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/MGavranovic/jaeger-backend/src/jaegerdb"
 )
 
 func main() {
@@ -18,6 +20,10 @@ func main() {
 
 	log.SetOutput(file)         // Setting the outpot to the log file
 	log.Printf("Start logging") // Test printing to the same logfile
+
+	// Testing DB package
+	jaegerdb.ConnectJaegerDB()
+	log.Print("Connection to the database established")
 
 	// TODO: create internal server package
 	// Server setup
