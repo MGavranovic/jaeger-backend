@@ -12,8 +12,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func handleGetUsers(w http.ResponseWriter, r *http.Request, conn *pgx.Conn) {
-	users := jaegerdb.GetUsersJaeger(conn) // getting users from db
+type Server struct {
+	dbConn *pgx.Conn
+}
+
+func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
+	users := jaegerdb.GetUsersJaeger(s.dbConn) // getting users from db
 
 	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
 
@@ -41,20 +45,24 @@ func main() {
 	dbConn := jaegerdb.ConnectJaegerDB()
 	defer dbConn.Close(context.Background())
 
+	apiServer := &Server{
+		dbConn: dbConn,
+	}
+
 	// TODO: create internal server package
 	// Server setup
-	mux := http.NewServeMux() // creating servemux
-	server := http.Server{    // server config
+	mux := http.NewServeMux()  // creating servemux
+	httpServer := http.Server{ // server config
 		Addr:    ":8080",
 		Handler: mux,
 	}
 
 	// API endpoints
-	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) { handleGetUsers(w, r, dbConn) })
+	mux.HandleFunc("/api/users", apiServer.handleGetUsers)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
-	if err := server.ListenAndServe(); err != nil { // ListenAndServe will block execution
+	if err := httpServer.ListenAndServe(); err != nil { // ListenAndServe will block execution
 		log.Printf("Error starting the server: %s", err)
 	}
 }
