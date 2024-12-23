@@ -2,13 +2,28 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
+	// "fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/MGavranovic/jaeger-backend/src/jaegerdb"
+	"github.com/jackc/pgx/v5"
 )
+
+func handleGetUsers(w http.ResponseWriter, r *http.Request, conn *pgx.Conn) {
+	users := jaegerdb.GetUsersJaeger(conn) // getting users from db
+
+	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
+
+	// Encoding users to JSON
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		http.Error(w, "Failed to encode users to JSON", http.StatusInternalServerError)
+		log.Printf("Error encoding users to JSON: %s", err)
+		return
+	}
+}
 
 func main() {
 	// TODO: create internal server logging
@@ -22,12 +37,9 @@ func main() {
 	log.SetOutput(file)         // Setting the outpot to the log file
 	log.Printf("Start logging") // Test printing to the same logfile
 
-	// Testing DB package
+	// Connecting to DB
 	dbConn := jaegerdb.ConnectJaegerDB()
 	defer dbConn.Close(context.Background())
-
-	users := jaegerdb.GetUsersJaeger(dbConn) // testing getting all users from the db
-	fmt.Println("users ", users)
 
 	// TODO: create internal server package
 	// Server setup
@@ -38,7 +50,7 @@ func main() {
 	}
 
 	// API endpoints
-	// mux.HandleFunc("/api/users")
+	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) { handleGetUsers(w, r, dbConn) })
 
 	// Server starting
 	log.Print("Server starting on port 8080")
