@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	// "fmt"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -26,6 +26,9 @@ func main() {
 	dbConn := jaegerdb.ConnectJaegerDB()
 	defer dbConn.Close(context.Background())
 
+	users := jaegerdb.GetUsersJaeger(dbConn) // testing getting all users from the db
+	fmt.Println("users ", users)
+
 	// TODO: create internal server package
 	// Server setup
 	mux := http.NewServeMux() // creating servemux
@@ -33,6 +36,9 @@ func main() {
 		Addr:    ":8080",
 		Handler: mux,
 	}
+
+	// API endpoints
+	// mux.HandleFunc("/api/users")
 
 	// Server starting
 	log.Print("Server starting on port 8080")

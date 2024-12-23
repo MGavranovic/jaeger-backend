@@ -2,6 +2,7 @@ package jaegerdb
 
 import (
 	"context"
+	// "fmt"
 	"log"
 	"os"
 
@@ -21,4 +22,13 @@ func ConnectJaegerDB() *pgx.Conn {
 	log.Print("Connection has been established with the DB")
 
 	return conn
+}
+
+func GetUsersJaeger(conn *pgx.Conn) pgx.Row {
+	users, err := conn.Query(context.Background(), "select * from users;")
+	if err != nil {
+		log.Printf("Unable to retrieve the users from the DB: %s", err)
+	}
+	defer users.Close()
+	return users
 }
