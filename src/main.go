@@ -17,16 +17,22 @@ type Server struct {
 }
 
 func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	users := jaegerdb.GetUsersJaeger(s.dbConn) // getting users from db
 
-	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
-
-	// Encoding users to JSON
-	if err := json.NewEncoder(w).Encode(users); err != nil {
+	// Marshalling users to JSON
+	data, err := json.Marshal(users)
+	if err != nil {
 		http.Error(w, "Failed to encode users to JSON", http.StatusInternalServerError)
 		log.Printf("Error encoding users to JSON: %s", err)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
+	w.Write(data)                                      // sending data
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func main() {
