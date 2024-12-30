@@ -16,6 +16,12 @@ type Server struct {
 	dbConn *pgx.Conn
 }
 
+type UserFromFrontend struct {
+	FullName string `json:"fullName"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 func main() {
 	// TODO: create internal server logging
 	// Creating a log file
@@ -46,6 +52,7 @@ func main() {
 
 	// API endpoints
 	mux.HandleFunc("/api/users", apiServer.handleGetUsers)
+	mux.HandleFunc("/api/users/signup", apiServer.handleSignupUser)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -56,6 +63,8 @@ func main() {
 
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	(*w).Header().Set("Access-Control-Allow-Headers", "*")
 }
 
 func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
@@ -71,4 +80,22 @@ func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
 	w.Write(data)                                      // sending data
+}
+
+func (s *Server) handleSignupUser(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	var newUser UserFromFrontend
+	// decoding new user coming from frontend
+	if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
+		http.Error(w, "Failed to decode json to new user", http.StatusInternalServerError)
+		log.Printf("Error decoding json to new user: %s", err)
+	}
+
+	// logging the new user TODO: will later create a func for adding it to db
+	log.Print("New User:", newUser.FullName, newUser.Email, newUser.Password)
 }
