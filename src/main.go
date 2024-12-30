@@ -16,25 +16,6 @@ type Server struct {
 	dbConn *pgx.Conn
 }
 
-func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	users := jaegerdb.GetUsersJaeger(s.dbConn) // getting users from db
-
-	// Marshalling users to JSON
-	data, err := json.Marshal(users)
-	if err != nil {
-		http.Error(w, "Failed to encode users to JSON", http.StatusInternalServerError)
-		log.Printf("Error encoding users to JSON: %s", err)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
-	w.Write(data)                                      // sending data
-}
-
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
 func main() {
 	// TODO: create internal server logging
 	// Creating a log file
@@ -71,4 +52,23 @@ func main() {
 	if err := httpServer.ListenAndServe(); err != nil { // ListenAndServe will block execution
 		log.Printf("Error starting the server: %s", err)
 	}
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+	users := jaegerdb.GetUsersJaeger(s.dbConn) // getting users from db
+
+	// Marshalling users to JSON
+	data, err := json.Marshal(users)
+	if err != nil {
+		http.Error(w, "Failed to encode users to JSON", http.StatusInternalServerError)
+		log.Printf("Error encoding users to JSON: %s", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
+	w.Write(data)                                      // sending data
 }
