@@ -87,15 +87,23 @@ func (s *Server) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
+		return
 	}
 
 	var newUser UserFromFrontend
 	// decoding new user coming from frontend
 	if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
-		http.Error(w, "Failed to decode json to new user", http.StatusInternalServerError)
-		log.Printf("Error decoding json to new user: %s", err)
+		http.Error(w, "Failed to decode JSON to new user", http.StatusInternalServerError)
+		log.Printf("Error decoding JSON to new user: %s", err)
+		return
 	}
 
-	// logging the new user TODO: will later create a func for adding it to db
-	log.Print("New User:", newUser.FullName, newUser.Email, newUser.Password)
+	// adding the new user to the DB
+	if err := jaegerdb.CreateUserJaeger(s.dbConn, newUser.FullName, newUser.Email, newUser.Password); err != nil {
+		log.Printf("Error creating the new user and adding it to DB: %s", err)
+		http.Error(w, "Failed to add new user to DB", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte("User created successfully"))
 }

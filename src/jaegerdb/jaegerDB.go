@@ -32,3 +32,27 @@ func GetUsersJaeger(conn *pgx.Conn) pgx.Row {
 	defer users.Close()
 	return users
 }
+
+func CreateUserJaeger(conn *pgx.Conn, fullName, email, password string) error {
+	tx, err := conn.Begin(context.Background()) // begin the transaction
+	if err != nil {
+		log.Printf("Unable to start DB transaction: %s", err)
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback(context.Background()) // rollback if an issue comes up
+		} else {
+			tx.Commit(context.Background()) // commiting the transaction
+		}
+	}()
+
+	query := `INSERT INTO users(full_name, email, password, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);` // query for inserting the user
+
+	_, err = tx.Exec(context.Background(), query, fullName, email, password) // executing the query
+	if err != nil {
+		log.Printf("Unable to insert the data into DB: %s", err)
+		return err
+	}
+	return nil
+}
