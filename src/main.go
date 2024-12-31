@@ -99,7 +99,7 @@ func (s *Server) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// adding the new user to the DB
-	if err := jaegerdb.CreateUserJaeger(s.dbConn, newUser.FullName, newUser.Email, newUser.Password); err != nil {
+	if err := jaegerdb.CreateUserJaeger(w, s.dbConn, newUser.FullName, newUser.Email, newUser.Password); err != nil {
 		log.Printf("Error creating the new user and adding it to DB: %s", err)
 		http.Error(w, "Failed to add new user to DB", http.StatusInternalServerError)
 		return
