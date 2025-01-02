@@ -10,3 +10,9 @@ type UsersDB struct {
 	createdAt time.Time
 	updatedAt time.Time
 }
+
+type RetrievedUser struct {
+	ID       int
+	FullName string
+	Email    string
+}

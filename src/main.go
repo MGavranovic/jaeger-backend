@@ -107,3 +107,5 @@ func (s *Server) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("User created successfully"))
 }
+
+// TODO: handleGetCurrentUser and call it in signup

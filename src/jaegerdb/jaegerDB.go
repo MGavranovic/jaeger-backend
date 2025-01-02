@@ -11,11 +11,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type InsertError struct {
-	ServerError    int
-	ConflictErrror int
-}
-
 func ConnectJaegerDB() *pgx.Conn {
 	if err := godotenv.Load("../.env"); err != nil {
 		log.Printf("Failed loading the environment file: %s", err)
@@ -69,4 +64,14 @@ func CreateUserJaeger(w http.ResponseWriter, conn *pgx.Conn, fullName, email, pa
 		return nil
 	}
 	return nil
+}
+
+func GetUserByEmail(conn *pgx.Conn, email string) (*RetrievedUser, error) {
+	var user RetrievedUser
+	err := conn.QueryRow(context.Background(), "SELECT id, full_name, email, FROM users WHERE id = $1").Scan(&user.ID, &user.FullName, &user.Email)
+	if err != nil {
+		log.Printf("Failed to retrieve user %s", email)
+		return &RetrievedUser{}, err
+	}
+	return &user, nil
 }
