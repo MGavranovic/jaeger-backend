@@ -68,7 +68,7 @@ func CreateUserJaeger(w http.ResponseWriter, conn *pgx.Conn, fullName, email, pa
 
 func GetUserByEmail(conn *pgx.Conn, email string) (*RetrievedUser, error) {
 	var user RetrievedUser
-	err := conn.QueryRow(context.Background(), "SELECT id, full_name, email, FROM users WHERE id = $1").Scan(&user.ID, &user.FullName, &user.Email)
+	err := conn.QueryRow(context.Background(), "SELECT id, full_name, email FROM users WHERE email = $1", email).Scan(&user.ID, &user.FullName, &user.Email)
 	if err != nil {
 		log.Printf("Failed to retrieve user %s", email)
 		return &RetrievedUser{}, err

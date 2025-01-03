@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"strings"
+
 	// "fmt"
 	"log"
 	"net/http"
@@ -53,6 +55,7 @@ func main() {
 	// API endpoints
 	mux.HandleFunc("/api/users", apiServer.handleGetUsers)
 	mux.HandleFunc("/api/users/signup", apiServer.handleSignupUser)
+	mux.HandleFunc("/api/users/login/", apiServer.handleGetCurrentUser)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -106,6 +109,37 @@ func (s *Server) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("User created successfully"))
+
 }
 
 // TODO: handleGetCurrentUser and call it in signup
+func (s *Server) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	// checking the path
+	path := r.URL.Path
+	basePath := "/api/users/login/"
+	if !strings.HasPrefix(path, basePath) {
+		log.Printf("Invalid URL: %s", path)
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	email := strings.TrimPrefix(path, basePath) // extracing the email from the path
+	if email == "" {
+		log.Printf("Email missing in the url request: %s", email)
+		http.Error(w, "Email is required", http.StatusBadRequest)
+		return
+	}
+
+	user, err := jaegerdb.GetUserByEmail(s.dbConn, email) // getting the user by email
+	if err != nil {
+		log.Printf("Failed to get user with %s", email)
+		http.Error(w, "Failed to get user from DB", http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(user)                    // marshaling to JSON
+	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
+	w.Write(data)
+}
