@@ -48,8 +48,8 @@ func CreateUserJaeger(w http.ResponseWriter, conn *pgx.Conn, fullName, email, pa
 		}
 	}()
 
-	query := `INSERT INTO users (full_name, email, password, created_at, updated_at)
-	VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	query := `INSERT INTO users (full_name, email, password, created_at, updated_at, is_authenticated)
+	VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, False)
 	ON CONFLICT (email) DO NOTHING;` // query for inserting the user
 
 	cmdTag, err := tx.Exec(context.Background(), query, fullName, email, password) // executing the query
@@ -66,9 +66,10 @@ func CreateUserJaeger(w http.ResponseWriter, conn *pgx.Conn, fullName, email, pa
 	return nil
 }
 
+// TODO: change is_authenticated to True during signup where login is happening
 func GetUserByEmail(conn *pgx.Conn, email string) (*RetrievedUser, error) {
 	var user RetrievedUser
-	err := conn.QueryRow(context.Background(), "SELECT id, full_name, email FROM users WHERE email = $1", email).Scan(&user.ID, &user.FullName, &user.Email)
+	err := conn.QueryRow(context.Background(), "SELECT id, full_name, email, is_authenticated FROM users WHERE email = $1", email).Scan(&user.ID, &user.FullName, &user.Email, &user.IsAuthenticated)
 	if err != nil {
 		log.Printf("Failed to retrieve user %s", email)
 		return &RetrievedUser{}, err

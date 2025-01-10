@@ -18,12 +18,6 @@ type Server struct {
 	dbConn *pgx.Conn
 }
 
-type UserFromFrontend struct {
-	FullName string `json:"fullName"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func main() {
 	// TODO: create internal server logging
 	// Creating a log file
@@ -85,6 +79,12 @@ func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)                                      // sending data
 }
 
+type UserFromFrontend struct {
+	FullName string `json:"fullName"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 func (s *Server) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
@@ -137,7 +137,7 @@ func (s *Server) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to get user with %s", email)
 		http.Error(w, "Failed to get user from DB", http.StatusInternalServerError)
 		return
-	}
+	} // TODO: change is_authenticated to True
 
 	data, err := json.Marshal(user)                    // marshaling to JSON
 	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
