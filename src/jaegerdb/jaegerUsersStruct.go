@@ -12,8 +12,7 @@ type UsersDB struct {
 }
 
 type RetrievedUser struct {
-	ID              int
-	FullName        string
-	Email           string
-	IsAuthenticated bool
+	ID       int
+	FullName string
+	Email    string
 }

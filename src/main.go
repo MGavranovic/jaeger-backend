@@ -137,7 +137,7 @@ func (s *Server) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to get user with %s", email)
 		http.Error(w, "Failed to get user from DB", http.StatusInternalServerError)
 		return
-	} // TODO: change is_authenticated to True
+	}
 
 	data, err := json.Marshal(user)                    // marshaling to JSON
 	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
