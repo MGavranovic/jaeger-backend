@@ -11,6 +11,8 @@ import (
 	"os"
 
 	"github.com/MGavranovic/jaeger-backend/src/jaegerdb"
+	"github.com/MGavranovic/jaeger-backend/src/jaegerjwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -49,7 +51,8 @@ func main() {
 	// API endpoints
 	mux.HandleFunc("/api/users", apiServer.handleGetUsers)
 	mux.HandleFunc("/api/users/signup", apiServer.handleSignupUser)
-	mux.HandleFunc("/api/users/login/", apiServer.handleGetCurrentUser)
+	mux.HandleFunc("/api/users/login/", apiServer.handleLoginUser)
+	mux.HandleFunc("/api/users/auth", apiServer.checkAuth)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -59,9 +62,10 @@ func main() {
 }
 
 func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	(*w).Header().Set("Access-Control-Allow-Headers", "*")
+	(*w).Header().Set("Access-Control-Allow-Credentials", "true")
 }
 
 func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +117,7 @@ func (s *Server) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // TODO: handleGetCurrentUser and call it in signup
-func (s *Server) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
 	// checking the path
@@ -132,14 +136,48 @@ func (s *Server) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := jaegerdb.GetUserByEmail(s.dbConn, email) // getting the user by email
+	token, err := jaegerjwt.GenerateJWT(email) // generating the token
 	if err != nil {
-		log.Printf("Failed to get user with %s", email)
-		http.Error(w, "Failed to get user from DB", http.StatusInternalServerError)
+		log.Printf("Failed to generate token: %s", err)
+		http.Error(w, "Failed to generate token", http.StatusUnauthorized)
 		return
 	}
 
-	data, err := json.Marshal(user)                    // marshaling to JSON
-	w.Header().Set("Content-Type", "application/json") // setting response header to JSON
-	w.Write(data)
+	// TODO: checking the credentials
+	jaegerjwt.SetTokenInCookies(w, token) // setting the cookies
+
+	w.WriteHeader(http.StatusOK) // OK response
+	log.Print("Users successfully logged in!")
+}
+
+func (s *Server) checkAuth(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+	// getting the cookie from the request body
+	cookie, err := r.Cookie("authToken")
+	// DEBUG: cookie seems to be unavailable here
+	log.Printf("cookie %s", cookie)
+	if err != nil {
+		log.Printf("Authorization unssuccessful :%s", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// validating the token from the cookie
+	token, err := jaegerjwt.ValidateToken(cookie.Value)
+	if err != nil {
+		log.Printf("Invalid token: %s", err)
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+	}
+
+	// extracting claims
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		userID := claims["email"].(string)
+		log.Printf("User %s is authenticated", userID)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Authenticated"))
+	} else {
+		log.Print("User is not authenticated")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	}
 }
