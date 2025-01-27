@@ -52,7 +52,7 @@ func main() {
 	mux.HandleFunc("/api/users", apiServer.handleGetUsers)
 	mux.HandleFunc("/api/users/signup", apiServer.handleSignupUser)
 	mux.HandleFunc("/api/users/login/", apiServer.handleLoginUser)
-	mux.HandleFunc("/api/users/auth", apiServer.checkAuth)
+	mux.HandleFunc("/api/users/login/auth", apiServer.checkAuth)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -63,7 +63,7 @@ func main() {
 
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
-	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	(*w).Header().Set("Access-Control-Allow-Headers", "*")
 	(*w).Header().Set("Access-Control-Allow-Credentials", "true")
 }
@@ -152,15 +152,25 @@ func (s *Server) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) checkAuth(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
+	// NOTE:  debugging
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	for _, cookie := range r.Cookies() {
+		log.Printf("Receieved cooke: %s = %s", cookie.Name, cookie.Value)
+	}
 	// getting the cookie from the request body
 	cookie, err := r.Cookie("authToken")
 	// DEBUG: cookie seems to be unavailable here
 	log.Printf("cookie %s", cookie)
 	if err != nil {
 		log.Printf("Authorization unssuccessful :%s", err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Error(w, "No cookie - Unauthorized", http.StatusUnauthorized)
 		return
 	}
+	// NOTE:  debugging
+	log.Printf("Cookie retrieved: %s = %s", cookie.Name, cookie.Value)
 
 	// validating the token from the cookie
 	token, err := jaegerjwt.ValidateToken(cookie.Value)

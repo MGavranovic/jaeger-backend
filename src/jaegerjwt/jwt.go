@@ -32,14 +32,18 @@ func GenerateJWT(email string) (string, error) {
 }
 
 func SetTokenInCookies(w http.ResponseWriter, token string) {
-	http.SetCookie(w, &http.Cookie{
+	// duration := time.Now().Add(time.Hour * 24)
+
+	cookie := &http.Cookie{
 		Name:     "authToken",
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteStrictMode,
-	})
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		// Expires:  duration,
+	}
+	http.SetCookie(w, cookie)
 }
 
 func ValidateToken(tokenStr string) (*jwt.Token, error) {
