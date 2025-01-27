@@ -152,24 +152,19 @@ func (s *Server) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) checkAuth(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
-	// NOTE:  debugging
+
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	for _, cookie := range r.Cookies() {
-		log.Printf("Receieved cooke: %s = %s", cookie.Name, cookie.Value)
-	}
+
 	// getting the cookie from the request body
 	cookie, err := r.Cookie("authToken")
-	// DEBUG: cookie seems to be unavailable here
-	log.Printf("cookie %s", cookie)
 	if err != nil {
 		log.Printf("Authorization unssuccessful :%s", err)
 		http.Error(w, "No cookie - Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	// NOTE:  debugging
 	log.Printf("Cookie retrieved: %s = %s", cookie.Name, cookie.Value)
 
 	// validating the token from the cookie
