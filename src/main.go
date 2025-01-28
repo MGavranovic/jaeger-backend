@@ -53,6 +53,7 @@ func main() {
 	mux.HandleFunc("/api/users/signup", apiServer.handleSignupUser)
 	mux.HandleFunc("/api/users/login/", apiServer.handleLoginUser)
 	mux.HandleFunc("/api/users/login/auth", apiServer.checkAuth)
+	mux.HandleFunc("/api/users/logout", apiServer.handleLogoutUser)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -185,4 +186,16 @@ func (s *Server) checkAuth(w http.ResponseWriter, r *http.Request) {
 		log.Print("User is not authenticated")
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 	}
+}
+
+func (s *Server) handleLogoutUser(w http.ResponseWriter, r *http.Request) {
+	jaegerjwt.DeleteCookie(w)            // delete cookie
+	cookie, err := r.Cookie("authToken") // check for cookie to return OK status
+	if err != nil {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Logged out"))
+		return
+	}
+
+	log.Printf("Cookie value after logout = %s", cookie) // if cookie exists
 }

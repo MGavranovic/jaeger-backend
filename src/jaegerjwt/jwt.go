@@ -46,6 +46,18 @@ func SetTokenInCookies(w http.ResponseWriter, token string) {
 	http.SetCookie(w, cookie)
 }
 
+func DeleteCookie(w http.ResponseWriter) {
+	cookie := &http.Cookie{
+		Name:     "authToken",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		MaxAge:   -1,
+	}
+	http.SetCookie(w, cookie)
+}
+
 func ValidateToken(tokenStr string) (*jwt.Token, error) {
 	if err := godotenv.Load("../.env"); err != nil {
 		log.Printf("Failed loading the environment file: %s", err)
