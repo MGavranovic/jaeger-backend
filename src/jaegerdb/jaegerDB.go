@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func ConnectJaegerDB() *pgx.Conn {
@@ -75,4 +76,22 @@ func GetUserByEmail(conn *pgx.Conn, email string) (*RetrievedUser, error) {
 		return &RetrievedUser{}, err
 	}
 	return &user, nil
+}
+
+func CheckCredentialsOnLogin(conn *pgx.Conn, email, password string) error {
+	var user LoginData
+	user.Email = email // assign the email to user
+	// get the pw for that email
+	err := conn.QueryRow(context.Background(), "SELECT password FROM users where email = $1", email).Scan(&user.Password)
+	if err != nil { // if err log and return err
+		log.Printf("Failed to find user with %s email address", email)
+		return err
+	}
+
+	// compare the existing hash with the pw from frontend
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		log.Print("Hash doesn't match the password")
+		return err
+	}
+	return nil
 }

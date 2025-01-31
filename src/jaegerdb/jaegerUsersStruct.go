@@ -16,3 +16,8 @@ type RetrievedUser struct {
 	FullName string
 	Email    string
 }
+
+type LoginData struct {
+	Email    string
+	Password string
+}

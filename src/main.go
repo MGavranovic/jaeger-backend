@@ -117,7 +117,10 @@ func (s *Server) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// TODO: handleGetCurrentUser and call it in signup
+type LoginData struct {
+	Password string `json:"password"`
+}
+
 func (s *Server) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
@@ -137,6 +140,28 @@ func (s *Server) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: checking the credentials
+	var loginData LoginData // getting the user data from login
+	if err := json.NewDecoder(r.Body).Decode(&loginData); err != nil {
+		http.Error(w, "Failed to decode JSON to login data", http.StatusInternalServerError)
+		log.Printf("Error decoding JSON to login data: %s", err)
+		return
+	}
+
+	// check pw exists
+	if loginData.Password == "" {
+		log.Print("Password missing in request body")
+		http.Error(w, "Password is required", http.StatusBadRequest)
+		return
+	}
+
+	// checking the credentials
+	if err := jaegerdb.CheckCredentialsOnLogin(s.dbConn, email, loginData.Password); err != nil {
+		log.Printf("Credentials don't match the db: %s", err)
+		http.Error(w, "Failed to compare credentials", http.StatusInternalServerError)
+		return
+	}
+
 	token, err := jaegerjwt.GenerateJWT(email) // generating the token
 	if err != nil {
 		log.Printf("Failed to generate token: %s", err)
@@ -144,7 +169,6 @@ func (s *Server) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: checking the credentials
 	jaegerjwt.SetTokenInCookies(w, token) // setting the cookies
 
 	w.WriteHeader(http.StatusOK) // OK response
@@ -188,6 +212,7 @@ func (s *Server) checkAuth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO: not return OK with an error
 func (s *Server) handleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	jaegerjwt.DeleteCookie(w)            // delete cookie
 	cookie, err := r.Cookie("authToken") // check for cookie to return OK status
