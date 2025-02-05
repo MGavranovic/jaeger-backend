@@ -54,6 +54,7 @@ func main() {
 	mux.HandleFunc("/api/users/login/", apiServer.handleLoginUser)
 	mux.HandleFunc("/api/users/login/auth", apiServer.checkAuth)
 	mux.HandleFunc("/api/users/logout", apiServer.handleLogoutUser)
+	mux.HandleFunc("/api/users/current/", apiServer.handleGetLoggedinUser)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -223,4 +224,38 @@ func (s *Server) handleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Cookie value after logout = %s", cookie) // if cookie exists
+}
+
+func (s *Server) handleGetLoggedinUser(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	// checking the path
+	path := r.URL.Path
+	basePath := "/api/users/current/"
+	if !strings.HasPrefix(path, basePath) {
+		log.Printf("Invalid URL: %s", path)
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	email := strings.TrimPrefix(path, basePath) // extracing the email from the path
+	if email == "" {
+		log.Printf("Email missing in the url request: %s", email)
+		http.Error(w, "Email is required", http.StatusBadRequest)
+		return
+	}
+
+	// TODO: get user and send the json to frontend on login
+	user, err := jaegerdb.GetUserByEmail(s.dbConn, email)
+	log.Printf("GetUserByEmail(%s) = user -> %s", email, user) // checking if we have proper data
+
+	jsonUser, err := json.Marshal(user) // marshalling user
+	if err != nil {
+		log.Printf("Failed marshaling user data to json: %s", err)
+		http.Error(w, "Failed marshaling user data to json", http.StatusInternalServerError)
+		return
+	}
+	log.Print(string(jsonUser))
+	w.Write(jsonUser) //sending user
+	w.WriteHeader(http.StatusOK)
 }
