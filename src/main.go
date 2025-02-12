@@ -55,6 +55,7 @@ func main() {
 	mux.HandleFunc("/api/users/login/auth", apiServer.checkAuth)
 	mux.HandleFunc("/api/users/logout", apiServer.handleLogoutUser)
 	mux.HandleFunc("/api/users/current/", apiServer.handleGetLoggedinUser)
+	mux.HandleFunc("/api/users/current/update", apiServer.handleUpdateUserData)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -258,4 +259,27 @@ func (s *Server) handleGetLoggedinUser(w http.ResponseWriter, r *http.Request) {
 	log.Print(string(jsonUser))
 	w.Write(jsonUser) //sending user
 	w.WriteHeader(http.StatusOK)
+}
+
+type UpdatedUserData struct {
+	ID       int    `json:"id"`
+	FullName string `json:"fullName"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (s *Server) handleUpdateUserData(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	var updatedUser UpdatedUserData // decode the updates comming from frontend
+	if err := json.NewDecoder(r.Body).Decode(&updatedUser); err != nil {
+		http.Error(w, "Failed to decode JSON to updated user", http.StatusInternalServerError)
+		log.Printf("Error decoding JSON to updated user: %s", err)
+		return
+	}
+
+	log.Printf("func handleUpdateUserData -> updated user info from that came in:\nID: %d\nFullName: %s\nEmail: %s\nPassword: %s\n", updatedUser.ID, updatedUser.FullName, updatedUser.Email, updatedUser.Password)
+
+	w.WriteHeader(http.StatusOK) // OK response
+	log.Print("Users information successfully updated!")
 }
