@@ -95,3 +95,15 @@ func CheckCredentialsOnLogin(conn *pgx.Conn, email, password string) error {
 	}
 	return nil
 }
+
+// TODO: create a function that turns 0 values into nil
+func UpdateUser(conn *pgx.Conn, newData UpdatedUserDataDB) (UpdatedUserDataDB, error) {
+	var updatedUser UpdatedUserDataDB
+
+	err := conn.QueryRow(context.Background(), "UPDATE users SET full_name = COALESCE($1, full_name), email = COALESCE($2, email), password = COALESCE($3, password) WHERE id = $4;", newData.fullName, newData.email, newData.password, newData.id).Scan()
+	if err != nil {
+		log.Printf("User couldn't be updated: %s", err)
+		return UpdatedUserDataDB{}, err
+	}
+	return updatedUser, nil
+}

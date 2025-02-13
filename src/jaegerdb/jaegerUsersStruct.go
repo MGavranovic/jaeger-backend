@@ -21,3 +21,10 @@ type LoginData struct {
 	Email    string
 	Password string
 }
+
+type UpdatedUserDataDB struct {
+	id       int
+	fullName string
+	email    string
+	password string
+}

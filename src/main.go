@@ -278,6 +278,7 @@ func (s *Server) handleUpdateUserData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: update user here (UpdateUser)
 	log.Printf("func handleUpdateUserData -> updated user info from that came in:\nID: %d\nFullName: %s\nEmail: %s\nPassword: %s\n", updatedUser.ID, updatedUser.FullName, updatedUser.Email, updatedUser.Password)
 
 	w.WriteHeader(http.StatusOK) // OK response
