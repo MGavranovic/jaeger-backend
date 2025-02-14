@@ -281,6 +281,21 @@ func (s *Server) handleUpdateUserData(w http.ResponseWriter, r *http.Request) {
 	// TODO: update user here (UpdateUser)
 	log.Printf("func handleUpdateUserData -> updated user info from that came in:\nID: %d\nFullName: %s\nEmail: %s\nPassword: %s\n", updatedUser.ID, updatedUser.FullName, updatedUser.Email, updatedUser.Password)
 
+	updatedData, err := jaegerdb.UpdateUser(s.dbConn, updatedUser.ID, updatedUser.FullName, updatedUser.Email, updatedUser.Password)
+	if err != nil {
+		log.Printf("UpdateUser -> couldn't update: %s", err)
+		http.Error(w, "Failed updating user data", http.StatusInternalServerError)
+		return
+	}
+
+	jsonUpdatedData, err := json.Marshal(updatedData)
+	if err != nil {
+		log.Printf("Failed marshaling updated user data to json: %s", err)
+		http.Error(w, "Failed marshaling updated user data to json", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonUpdatedData)
 	w.WriteHeader(http.StatusOK) // OK response
 	log.Print("Users information successfully updated!")
 }

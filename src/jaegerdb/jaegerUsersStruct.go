@@ -24,7 +24,7 @@ type LoginData struct {
 
 type UpdatedUserDataDB struct {
 	id       int
-	fullName string
-	email    string
-	password string
+	fullName *string
+	email    *string
+	password *string
 }
