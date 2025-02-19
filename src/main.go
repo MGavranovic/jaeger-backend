@@ -55,6 +55,7 @@ func main() {
 	mux.HandleFunc("/api/users/login/auth", apiServer.checkAuth)
 	mux.HandleFunc("/api/users/logout", apiServer.handleLogoutUser)
 	mux.HandleFunc("/api/users/current/", apiServer.handleGetLoggedinUser)
+	mux.HandleFunc("/api/users/current", apiServer.handleGetCurrentUser) // this is needed for user data on frontend to be up to date
 	mux.HandleFunc("/api/users/current/update", apiServer.handleUpdateUserData)
 
 	// Server starting
@@ -259,6 +260,60 @@ func (s *Server) handleGetLoggedinUser(w http.ResponseWriter, r *http.Request) {
 	log.Print(string(jsonUser))
 	w.Write(jsonUser) //sending user
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	// get the cookie from the request
+	cookie, err := r.Cookie("authToken")
+	if err != nil {
+		log.Printf("Missing auth token: %s", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// validate cookie
+	token, err := jaegerjwt.ValidateToken(cookie.Value)
+	if err != nil {
+		log.Printf("Invalid token: %s", err)
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	// get claims from the token
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		log.Print("Token is not valid")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// get email from the claims
+	email, ok := claims["email"].(string)
+	if !ok {
+		log.Print("Email claim is missing or invalid")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := jaegerdb.GetUserByEmail(s.dbConn, email)
+	if err != nil {
+		log.Printf("Failed retrieving user: %s", err)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// marshal the data and send to frontend
+	jsonUser, err := json.Marshal(user)
+	if err != nil {
+		log.Printf("Error marshaling user: %s", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonUser)
 }
 
 type UpdatedUserData struct {
