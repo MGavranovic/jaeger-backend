@@ -57,6 +57,7 @@ func main() {
 	mux.HandleFunc("/api/users/current/", apiServer.handleGetLoggedinUser)
 	mux.HandleFunc("/api/users/current", apiServer.handleGetCurrentUser) // this is needed for user data on frontend to be up to date
 	mux.HandleFunc("/api/users/current/update", apiServer.handleUpdateUserData)
+	mux.HandleFunc("/api/notes/create", apiServer.handleCreateNote)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -353,4 +354,32 @@ func (s *Server) handleUpdateUserData(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonUpdatedData)
 	w.WriteHeader(http.StatusOK) // OK response
 	log.Print("Users information successfully updated!")
+}
+
+// TODO: handlers for notes
+type Note struct {
+	UUID              string `json:"uuid"`
+	CompanyName       string `json:"companyName"`
+	Position          string `json:"position"`
+	Salary            string `json:"salary"`
+	ApplicationStatus string `json:"applicationStatus"`
+	AppliedOn         string `json:"appliedOn"`
+	Description       string `json:"description"`
+}
+
+func (s *Server) handleCreateNote(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	var noteData Note
+	if err := json.NewDecoder(r.Body).Decode(&noteData); err != nil {
+		log.Printf("Failed to decode note data: %s", err)
+		http.Error(w, "Failed to decode note data", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Note Data from frontend: %s", noteData)
+
+	log.Printf("*****INCOMMING NOTE*****\nfunc handleCreateNote -> note data that came in from the frontend:\nUUID: %s\nCompanyName: %s\nPosition: %s\nSalary: %s\nApplicationStatus: %s\nAppliedOn: %s\nDescription: %s\n*****END Incomming NOTE*****", noteData.UUID, noteData.CompanyName, noteData.Position, noteData.Salary, noteData.ApplicationStatus, noteData.AppliedOn, noteData.Description)
+
+	w.WriteHeader(http.StatusOK) // OK response
 }
