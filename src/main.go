@@ -365,6 +365,7 @@ type Note struct {
 	ApplicationStatus string `json:"applicationStatus"`
 	AppliedOn         string `json:"appliedOn"`
 	Description       string `json:"description"`
+	UserId            int    `json:"userId"`
 }
 
 func (s *Server) handleCreateNote(w http.ResponseWriter, r *http.Request) {
@@ -377,9 +378,7 @@ func (s *Server) handleCreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Note Data from frontend: %s", noteData)
-
-	log.Printf("*****INCOMMING NOTE*****\nfunc handleCreateNote -> note data that came in from the frontend:\nUUID: %s\nCompanyName: %s\nPosition: %s\nSalary: %s\nApplicationStatus: %s\nAppliedOn: %s\nDescription: %s\n*****END Incomming NOTE*****", noteData.UUID, noteData.CompanyName, noteData.Position, noteData.Salary, noteData.ApplicationStatus, noteData.AppliedOn, noteData.Description)
+	log.Printf("\n*****INCOMMING NOTE*****\nfunc handleCreateNote -> note data that came in from the frontend:\nUUID: %s\nCompanyName: %s\nPosition: %s\nSalary: %s\nApplicationStatus: %s\nAppliedOn: %s\nDescription: %s\nUser ID: %d\n*****END Incomming NOTE*****", noteData.UUID, noteData.CompanyName, noteData.Position, noteData.Salary, noteData.ApplicationStatus, noteData.AppliedOn, noteData.Description, noteData.UserId)
 
 	w.WriteHeader(http.StatusOK) // OK response
 }
