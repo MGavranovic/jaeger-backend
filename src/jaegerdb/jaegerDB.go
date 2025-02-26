@@ -115,3 +115,15 @@ func stringToNil(s *string) *string {
 	}
 	return s
 }
+
+func CreateNote(conn *pgx.Conn, uuid, companyName, position, salary, applicationStatus, appliedOn, description string, userId int) error {
+
+	_, err := conn.Exec(context.Background(), `INSERT INTO notes(
+	note_id, company_name, "position", salary, application_status, applied_on, description, updated_at, fk_user_id)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, $8);`, uuid, companyName, position, salary, applicationStatus, appliedOn, description, userId)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}

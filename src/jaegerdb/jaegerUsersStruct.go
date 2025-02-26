@@ -28,3 +28,15 @@ type UpdatedUserDataDB struct {
 	email    *string
 	password *string
 }
+
+// structs for notes
+type NewNote struct {
+	uuid              string
+	companyName       string
+	position          string
+	salary            string
+	applicationStatus string
+	appliedOn         string
+	description       string
+	userId            int
+}

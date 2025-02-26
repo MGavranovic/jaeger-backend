@@ -380,5 +380,14 @@ func (s *Server) handleCreateNote(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("\n*****INCOMMING NOTE*****\nfunc handleCreateNote -> note data that came in from the frontend:\nUUID: %s\nCompanyName: %s\nPosition: %s\nSalary: %s\nApplicationStatus: %s\nAppliedOn: %s\nDescription: %s\nUser ID: %d\n*****END Incomming NOTE*****", noteData.UUID, noteData.CompanyName, noteData.Position, noteData.Salary, noteData.ApplicationStatus, noteData.AppliedOn, noteData.Description, noteData.UserId)
 
+	if err := jaegerdb.CreateNote(s.dbConn, noteData.UUID, noteData.CompanyName, noteData.Position, noteData.Salary, noteData.ApplicationStatus, noteData.AppliedOn, noteData.Description, noteData.UserId); err != nil {
+		log.Printf("Failed creating Note: %s", err)
+		http.Error(w, "Failed creating Note", http.StatusInternalServerError)
+	}
+
+	/*
+		newNote.uuid, newNote.companyName, newNote.position, newNote.salary, newNote.applicationStatus, newNote.appliedOn, newNote.description, newNote.userId
+	*/
 	w.WriteHeader(http.StatusOK) // OK response
+	log.Print("Note created successfully!")
 }
