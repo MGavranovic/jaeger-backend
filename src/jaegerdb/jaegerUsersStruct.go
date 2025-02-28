@@ -30,3 +30,15 @@ type UpdatedUserDataDB struct {
 }
 
 // structs for notes
+type NoteDB struct {
+	Id                int    `json:"id"`
+	Uuid              string `json:"uuid"`
+	CompanyName       string `json:"companyName"`
+	Position          string `json:"position"`
+	Salary            string `json:"salary"`
+	ApplicationStatus string `json:"applicationStatus"`
+	AppliedOn         string `json:"appliedOn"`
+	Description       string `json:"description"`
+	UpdatedAt         string `json:"updatedAt"`
+	UserId            string `json:"userId"`
+}

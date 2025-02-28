@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 
 	// "fmt"
@@ -58,6 +59,7 @@ func main() {
 	mux.HandleFunc("/api/users/current", apiServer.handleGetCurrentUser) // this is needed for user data on frontend to be up to date
 	mux.HandleFunc("/api/users/current/update", apiServer.handleUpdateUserData)
 	mux.HandleFunc("/api/notes/create", apiServer.handleCreateNote)
+	mux.HandleFunc("/api/notes/", apiServer.handleGetUserNotes)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -390,4 +392,49 @@ func (s *Server) handleCreateNote(w http.ResponseWriter, r *http.Request) {
 	*/
 	w.WriteHeader(http.StatusOK) // OK response
 	log.Print("Note created successfully!")
+}
+
+func (s *Server) handleGetUserNotes(w http.ResponseWriter, r *http.Request) {
+	// TODO: extract id from url and pass it to getAllUserNotes DB func
+	enableCors(&w)
+
+	// checking the path
+	path := r.URL.Path
+	basePath := "/api/notes/"
+	if !strings.HasPrefix(path, basePath) {
+		log.Printf("Invalid URL: %s", path)
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	id := strings.TrimPrefix(path, basePath) // extracing the id from the path
+	if id == "" {
+		log.Printf("ID missing in the url request: %s", id)
+		http.Error(w, "ID is required", http.StatusBadRequest)
+		return
+	}
+
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Printf("Invalid ID format: %s", id)
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	userNotes, err := jaegerdb.GetAllUserNotes(s.dbConn, intId)
+	if err != nil {
+		log.Printf("Failed to retrieve user notes: %s", err)
+		http.Error(w, "Failed to retrieve user notes!", http.StatusInternalServerError)
+	}
+
+	jsonNotes, err := json.Marshal(userNotes)
+	if err != nil {
+		log.Printf("Failed to marshal user notes: %s", err)
+		http.Error(w, "Failed to marshal user notes!", http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonNotes)
+	log.Print("Notes sent to frontend successfully!")
 }

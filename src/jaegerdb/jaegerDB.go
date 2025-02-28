@@ -3,6 +3,8 @@ package jaegerdb
 import (
 	"context"
 	"net/http"
+	"time"
+
 	// "fmt"
 	"log"
 	"os"
@@ -126,4 +128,33 @@ func CreateNote(conn *pgx.Conn, uuid, companyName, position, salary, application
 		return err
 	}
 	return nil
+}
+
+func GetAllUserNotes(conn *pgx.Conn, id int) ([]NoteDB, error) {
+	rows, err := conn.Query(context.Background(), `SELECT * FROM notes WHERE fk_user_id = $1`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var notes []NoteDB
+	for rows.Next() {
+		var note NoteDB
+		var appliedOn time.Time
+		var updatedAt time.Time
+
+		if err := rows.Scan(&note.Id, &note.Uuid, &note.CompanyName, &note.Position, &note.Salary, &note.ApplicationStatus, &appliedOn, &note.Description, &updatedAt, &note.UserId); err != nil {
+			return nil, err
+		}
+		note.AppliedOn = appliedOn.Format("2006-01-02 15:04:05")
+		note.UpdatedAt = updatedAt.Format("2006-01-02 15:04:05")
+
+		notes = append(notes, note)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return notes, nil
 }
