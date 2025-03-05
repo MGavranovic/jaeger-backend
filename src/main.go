@@ -422,9 +422,15 @@ func (s *Server) handleGetUserNotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userNotes, err := jaegerdb.GetAllUserNotes(s.dbConn, intId)
+	// DEBUG: notes sent as null
+	log.Printf("Notes sent to frontend %s", userNotes)
 	if err != nil {
 		log.Printf("Failed to retrieve user notes: %s", err)
 		http.Error(w, "Failed to retrieve user notes!", http.StatusInternalServerError)
+	}
+
+	if userNotes == nil {
+		userNotes = []jaegerdb.NoteDB{}
 	}
 
 	jsonNotes, err := json.Marshal(userNotes)
