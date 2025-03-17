@@ -1,6 +1,6 @@
 module github.com/MGavranovic/jaeger-backend
 
-go 1.23.7
+go 1.24.1
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
