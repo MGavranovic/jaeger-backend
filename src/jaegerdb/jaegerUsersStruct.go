@@ -38,7 +38,16 @@ type NoteDB struct {
 	Salary            string `json:"salary"`
 	ApplicationStatus string `json:"applicationStatus"`
 	AppliedOn         string `json:"appliedOn"`
-	Description       string `json:"description"`
-	UpdatedAt         string `json:"updatedAt"`
 	UserId            string `json:"userId"`
+	UpdatedAt         string `json:"updatedAt"`
+	Description       string `json:"description"`
+}
+
+type CheckNoteForUpdate struct {
+	companyName string
+	position    string
+	salary      string
+	status      string
+	appliedOn   time.Time
+	description string
 }

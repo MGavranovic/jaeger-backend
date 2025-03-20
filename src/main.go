@@ -467,4 +467,7 @@ func (s *Server) handleUpdateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("\n*****INCOMMING UPDATED NOTE*****\nfunc handleUpdateNote -> updated note data that came in from the frontend:\nCompanyName: %s\nPosition: %s\nSalary: %s\nApplicationStatus: %s\nAppliedOn: %s\nDescription: %s\nUser ID: %d\nNote ID: %d\n*****END Incomming NOTE*****", updatedNoteData.CompanyName, updatedNoteData.Position, updatedNoteData.Salary, updatedNoteData.ApplicationStatus, updatedNoteData.AppliedOn, updatedNoteData.Description, updatedNoteData.UserId, updatedNoteData.NoteId)
+
+	// NOTE: testing
+	jaegerdb.UpdateNote(s.dbConn, updatedNoteData.NoteId, updatedNoteData.CompanyName, updatedNoteData.Position, updatedNoteData.Salary, updatedNoteData.ApplicationStatus, updatedNoteData.AppliedOn, updatedNoteData.Description)
 }

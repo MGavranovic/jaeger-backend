@@ -2,6 +2,7 @@ package jaegerdb
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -143,7 +144,7 @@ func GetAllUserNotes(conn *pgx.Conn, id int) ([]NoteDB, error) {
 		var appliedOn time.Time
 		var updatedAt time.Time
 
-		if err := rows.Scan(&note.Id, &note.Uuid, &note.CompanyName, &note.Position, &note.Salary, &note.ApplicationStatus, &appliedOn, &note.Description, &updatedAt, &note.UserId); err != nil {
+		if err := rows.Scan(&note.Id, &note.Uuid, &note.CompanyName, &note.Position, &note.Salary, &note.ApplicationStatus, &appliedOn, &note.UserId, &updatedAt, &note.Description); err != nil {
 			return nil, err
 		}
 		note.AppliedOn = appliedOn.Format("2006-01-02 15:04:05")
@@ -158,3 +159,69 @@ func GetAllUserNotes(conn *pgx.Conn, id int) ([]NoteDB, error) {
 
 	return notes, nil
 }
+
+func getNote(conn *pgx.Conn, id int) CheckNoteForUpdate {
+	var note CheckNoteForUpdate
+	if err := conn.QueryRow(context.Background(), `SELECT company_name, position, salary, application_status, applied_on, description FROM notes WHERE id = $1`, id).Scan(
+		&note.companyName, &note.position, &note.salary, &note.status, &note.appliedOn, &note.description); err != nil {
+		log.Printf("Error getting the note for updating")
+	}
+
+	return note
+}
+
+func UpdateNote(conn *pgx.Conn, id int, company, pos, sal, appStat, appOn, desc string) {
+	query := "UPDATE notes SET" // query to append to
+	// 1. get the data for this note
+	existingData := getNote(conn, id)
+	log.Printf("EXISTING NOTE DATA: \nCompany Name: %s\nPosition: %s\nSalary: %s\nApplication Status: %s\nApplied On: %s\nDescription: %s\n", existingData.companyName, existingData.position, existingData.salary, existingData.status, existingData.appliedOn, existingData.description)
+	// 2. compare it with new data
+	args := []interface{}{}
+	counter := 1
+	if existingData.companyName != company {
+		query += fmt.Sprintf(" company_name = $%d,", counter)
+		args = append(args, company)
+		counter++
+	}
+	if existingData.position != pos {
+		query += fmt.Sprintf(" position = $%d,", counter)
+		args = append(args, pos)
+		counter++
+	}
+	if existingData.salary != sal {
+		query += fmt.Sprintf(" salary = $%d,", counter)
+		args = append(args, sal)
+		counter++
+	}
+	if existingData.status != appStat {
+		query += fmt.Sprintf(" application_status = $%d,", counter)
+		args = append(args, appStat)
+		counter++
+	}
+	appOnTime, _ := time.Parse("2006-01-02 15:04:05", appOn)
+	existingAppliedOn := existingData.appliedOn.UTC()
+	if !existingAppliedOn.Equal(appOnTime.UTC()) {
+		query += fmt.Sprintf(" applied_on = $%d,", counter)
+		args = append(args, appOnTime)
+		counter++
+	}
+	if existingData.description != desc {
+		query += fmt.Sprintf(" description = $%d,", counter)
+		args = append(args, desc)
+		counter++
+	}
+
+	log.Print("*************************args*********************************\n", args, "\n", "*************************args*********************************\n")
+
+}
+
+/*
+CompanyName       string `json:"companyName,omitempty"`
+	Position          string `json:"position,omitempty"`
+	Salary            string `json:"salary,omitempty"`
+	ApplicationStatus string `json:"applicationStatus,omitempty"`
+	AppliedOn         string `json:"appliedOn,omitempty"`
+	Description       string `json:"description,omitempty"`
+	UserId            int    `json:"userId"`
+	NoteId            int    `json:"noteId"
+*/
