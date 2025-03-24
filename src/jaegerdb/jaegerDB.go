@@ -176,7 +176,7 @@ func UpdateNote(conn *pgx.Conn, id int, company, pos, sal, appStat, appOn, desc 
 	existingData := getNote(conn, id)
 	log.Printf("EXISTING NOTE DATA: \nCompany Name: %s\nPosition: %s\nSalary: %s\nApplication Status: %s\nApplied On: %s\nDescription: %s\n", existingData.companyName, existingData.position, existingData.salary, existingData.status, existingData.appliedOn, existingData.description)
 	// 2. compare it with new data
-	args := []interface{}{}
+	args := []any{}
 	counter := 1
 	if existingData.companyName != company {
 		query += fmt.Sprintf(" company_name = $%d,", counter)
@@ -198,11 +198,19 @@ func UpdateNote(conn *pgx.Conn, id int, company, pos, sal, appStat, appOn, desc 
 		args = append(args, appStat)
 		counter++
 	}
-	appOnTime, _ := time.Parse("2006-01-02 15:04:05", appOn)
+
+	appliedOnDate, err := time.Parse("2006-01-02", appOn)
+	if err != nil {
+		log.Printf("There is an error with parsing the date: %s", err)
+	}
+	now := time.Now()
+
+	fullDateTime := time.Date(appliedOnDate.Year(), appliedOnDate.Month(), appliedOnDate.Day(), now.Hour(), now.Minute(), now.Second(), 0, time.UTC)
 	existingAppliedOn := existingData.appliedOn.UTC()
-	if !existingAppliedOn.Equal(appOnTime.UTC()) {
+
+	if !existingAppliedOn.Equal(fullDateTime) {
 		query += fmt.Sprintf(" applied_on = $%d,", counter)
-		args = append(args, appOnTime)
+		args = append(args, fullDateTime)
 		counter++
 	}
 	if existingData.description != desc {
