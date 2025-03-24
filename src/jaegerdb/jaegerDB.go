@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	// "fmt"
@@ -170,7 +171,7 @@ func getNote(conn *pgx.Conn, id int) CheckNoteForUpdate {
 	return note
 }
 
-func UpdateNote(conn *pgx.Conn, id int, company, pos, sal, appStat, appOn, desc string) {
+func UpdateNote(conn *pgx.Conn, id int, company, pos, sal, appStat, appOn, desc string) error {
 	query := "UPDATE notes SET" // query to append to
 	// 1. get the data for this note
 	existingData := getNote(conn, id)
@@ -218,18 +219,19 @@ func UpdateNote(conn *pgx.Conn, id int, company, pos, sal, appStat, appOn, desc 
 		args = append(args, desc)
 		counter++
 	}
+	query += " updated_at = CURRENT_TIMESTAMP,"
 
 	log.Print("*************************args*********************************\n", args, "\n", "*************************args*********************************\n")
 
-}
+	query = strings.TrimSuffix(query, ",")
+	query += fmt.Sprintf(" WHERE id = $%d", counter)
+	args = append(args, id)
 
-/*
-CompanyName       string `json:"companyName,omitempty"`
-	Position          string `json:"position,omitempty"`
-	Salary            string `json:"salary,omitempty"`
-	ApplicationStatus string `json:"applicationStatus,omitempty"`
-	AppliedOn         string `json:"appliedOn,omitempty"`
-	Description       string `json:"description,omitempty"`
-	UserId            int    `json:"userId"`
-	NoteId            int    `json:"noteId"
-*/
+	if len(args) > 1 {
+		_, err := conn.Exec(context.Background(), query, args...)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
