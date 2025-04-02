@@ -61,6 +61,7 @@ func main() {
 	mux.HandleFunc("/api/notes/create", apiServer.handleCreateNote)
 	mux.HandleFunc("/api/notes/", apiServer.handleGetUserNotes)
 	mux.HandleFunc("/api/notes/update", apiServer.handleUpdateNote)
+	mux.HandleFunc("/api/notes/current/", apiServer.handleGetCurrentNote)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -476,4 +477,41 @@ func (s *Server) handleUpdateNote(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Note updated successfully")
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+func (s *Server) handleGetCurrentNote(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	path := r.URL.Path
+	basePath := "/api/notes/current/"
+	if !strings.HasPrefix(path, basePath) {
+		log.Printf("Invalid URL: %s", path)
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	id := strings.TrimPrefix(path, basePath)
+	if id == "" {
+		log.Printf("ID missing in the url request: %s", id)
+		http.Error(w, "ID is required", http.StatusBadRequest)
+		return
+	}
+
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Printf("Invalid ID format in getCurrentNote handler: %s", id)
+		http.Error(w, "Invalid ID format in getCurrentNote handler", http.StatusBadRequest)
+		return
+	}
+
+	note := jaegerdb.GetUpdatedNote(s.dbConn, intId)
+	jsonUpdatedNote, err := json.Marshal(note)
+	if err != nil {
+		log.Printf("Failed marshaling updated note data to json: %s", err)
+		http.Error(w, "Failed marshaling updated note data to json", http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsonUpdatedNote)
+	w.WriteHeader(http.StatusOK)
+	log.Print("Note data successfully updated!")
 }

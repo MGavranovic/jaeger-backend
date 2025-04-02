@@ -235,3 +235,23 @@ func UpdateNote(conn *pgx.Conn, id int, company, pos, sal, appStat, appOn, desc 
 	}
 	return nil
 }
+
+// DEBUG: date format is the problem cause it has time along with date
+func GetUpdatedNote(conn *pgx.Conn, id int) NoteDB {
+	var appliedOn time.Time
+	var updatedAt time.Time
+
+	var note NoteDB
+	if err := conn.QueryRow(context.Background(),
+		`SELECT id, note_id, company_name, position, salary, application_status, applied_on, fk_user_id, updated_at, description
+	FROM notes WHERE id = $1`, id).
+		Scan(&note.Id, &note.Uuid, &note.CompanyName, &note.Position,
+			&note.Salary, &note.ApplicationStatus, &appliedOn,
+			&note.UserId, &updatedAt, &note.Description); err != nil {
+		log.Printf("Couldn't get the note after updating: %s", err)
+	}
+
+	note.AppliedOn = appliedOn.Format("2006-01-02 15:04:05")
+	note.UpdatedAt = updatedAt.Format("2006-01-02 15:04:05")
+	return note
+}
