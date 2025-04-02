@@ -62,6 +62,7 @@ func main() {
 	mux.HandleFunc("/api/notes/", apiServer.handleGetUserNotes)
 	mux.HandleFunc("/api/notes/update", apiServer.handleUpdateNote)
 	mux.HandleFunc("/api/notes/current/", apiServer.handleGetCurrentNote)
+	mux.HandleFunc("/api/notes/delete/", apiServer.handleDeleteNote)
 
 	// Server starting
 	log.Print("Server starting on port 8080")
@@ -514,4 +515,36 @@ func (s *Server) handleGetCurrentNote(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonUpdatedNote)
 	w.WriteHeader(http.StatusOK)
 	log.Print("Note data successfully updated!")
+}
+
+func (s *Server) handleDeleteNote(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	path := r.URL.Path
+	basePath := "/api/notes/delete/"
+	if !strings.HasPrefix(path, basePath) {
+		log.Printf("Invalid URL: %s", path)
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	id := strings.TrimPrefix(path, basePath)
+	if id == "" {
+		log.Printf("ID missing in the url request: %s", id)
+		http.Error(w, "ID is required", http.StatusBadRequest)
+		return
+	}
+
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Printf("Invalid ID format in handleDeleteNote handler: %s", id)
+		http.Error(w, "Invalid ID format in handleDeleteNote handler", http.StatusBadRequest)
+		return
+	}
+
+	if err := jaegerdb.DeleteNote(s.dbConn, intId); err != nil {
+		log.Printf("Issues deleting note from DB: %s", err)
+		http.Error(w, "Unable to delete note from DB", http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusOK)
 }

@@ -255,3 +255,13 @@ func GetUpdatedNote(conn *pgx.Conn, id int) NoteDB {
 	note.UpdatedAt = updatedAt.Format("2006-01-02 15:04:05")
 	return note
 }
+
+func DeleteNote(conn *pgx.Conn, id int) error {
+	result, err := conn.Exec(context.Background(), "DELETE FROM notes WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	affected := result.RowsAffected()
+	log.Printf("Deleted %d rows", affected)
+	return nil
+}
